@@ -15,7 +15,7 @@ time.sleep(1.25)  # Wait for connections
 
 # Create a task event (custom kind=30001 for tasks)
 task_content = {
-    "description": "Write a poem about Bitcoin from the voice of Hal Finney",
+    "description": "Optimize supply chain simulation",
     "max_sats": 1000,
     "deadline": "5 minutes"
 }
@@ -31,4 +31,25 @@ relay_manager.publish_event(event)
 time.sleep(1)  # Wait for publish
 
 print("Task posted! Event ID:", event.id)
+
+# NEW: Subscribe to bids replying to our task (kind=30002, tagged with #e to the task ID)
+filters = [{"kinds": [30002], "#e": [event.id]}]  # Listen for bids on this event
+subscription_id = "bid_sub"  # Unique ID for this subscription
+relay_manager.add_subscription(subscription_id, filters)
+
+# NEW: Poll for incoming messages (simple loop for MVP; run for ~10 seconds)
+print("Listening for bids...")
+start_time = time.time()
+while time.time() - start_time < 10:  # Listen for 10 seconds
+    while relay_manager.message_pool.has_events():
+        msg = relay_manager.message_pool.get_event()
+        if msg.event.kind == 30002:  # Check it's a bid
+            print("Received bid event!")
+            print("Bidder Pubkey:", msg.event.public_key)
+            print("Bid Content:", msg.event.content)
+            print("Bid ID:", msg.event.id)
+    time.sleep(0.5)  # Check every half second to avoid CPU spin
+
+print("Listening stopped.")
+
 relay_manager.close_connections()
