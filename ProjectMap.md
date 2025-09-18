@@ -168,4 +168,3 @@ Epic: Connect layers into a cohesive system with a sample flow.
  Write BAMP Spec: ERC-like document (P1)
  Setup Repo: LICENSE (MIT), CONTRIBUTING.md, CODE_OF_CONDUCT.md
  Examples: Starter agents in Rust/Go
- Community: Discord/Slack for contributors; Issue templates for bugs/features
