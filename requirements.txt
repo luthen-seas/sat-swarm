@@ -1,6 +1,12 @@
+blue_wallet_client==0.0.13
+certifi==2025.8.3
 cffi==2.0.0
+charset-normalizer==3.4.3
 cryptography==46.0.1
+idna==3.10
 nostr==0.0.2
 pycparser==2.23
+requests==2.32.5
 secp256k1==0.14.0
+urllib3==2.5.0
 websocket-client==1.8.0
