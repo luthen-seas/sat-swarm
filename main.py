@@ -2,6 +2,12 @@ import time
 from nostr.key import PrivateKey
 from nostr.relay_manager import RelayManager
 from nostr.event import Event
+from blue_wallet_client import BlueWalletClient  # NEW: Import Lightning client
+
+# NEW: Lightning setup (use input for creds in MVP; secure later)
+login = input("Enter Blue Wallet login: ")
+password = input("Enter Blue Wallet password: ")
+bw_client = BlueWalletClient(bluewallet_login=login, bluewallet_password=password)
 
 # Generate or load keys (like your agent's identity)
 private_key = PrivateKey()  # Creates a new one each run; save for persistence later
@@ -32,15 +38,21 @@ time.sleep(1)  # Wait for publish
 
 print("Task posted! Event ID:", event.id)
 
-# NEW: Subscribe to bids replying to our task (kind=30002, tagged with #e to the task ID)
+# NEW: Create a Lightning invoice for the task (e.g., 500 sats bid)
+invoice_res = bw_client.create_invoice(amt=500, memo=f"Bid for task {event.id}")
+payment_request = invoice_res["payment_request"]
+r_hash = invoice_res["r_hash"]
+print("Generated Lightning invoice for bid:", payment_request)
+
+# Subscribe to bids replying to our task (kind=30002, tagged with #e to the task ID)
 filters = [{"kinds": [30002], "#e": [event.id]}]  # Listen for bids on this event
 subscription_id = "bid_sub"  # Unique ID for this subscription
 relay_manager.add_subscription(subscription_id, filters)
 
-# NEW: Poll for incoming messages (simple loop for MVP; run for ~10 seconds)
-print("Listening for bids...")
+# Poll for incoming messages (simple loop for MVP; run for ~30 seconds now)
+print("Listening for bids and checking invoice payment...")
 start_time = time.time()
-while time.time() - start_time < 10:  # Listen for 10 seconds
+while time.time() - start_time < 30:  # Listen longer for payment
     while relay_manager.message_pool.has_events():
         msg = relay_manager.message_pool.get_event()
         if msg.event.kind == 30002:  # Check it's a bid
@@ -48,7 +60,14 @@ while time.time() - start_time < 10:  # Listen for 10 seconds
             print("Bidder Pubkey:", msg.event.public_key)
             print("Bid Content:", msg.event.content)
             print("Bid ID:", msg.event.id)
-    time.sleep(0.5)  # Check every half second to avoid CPU spin
+
+    # NEW: Check if invoice is paid
+    invoice_status = bw_client.lookup_invoice(r_hash=r_hash)
+    if invoice_status["ispaid"]:
+        print("Invoice paid! Bid accepted.")
+        break  # Stop listening once paid
+
+    time.sleep(1)  # Check every second
 
 print("Listening stopped.")
 
