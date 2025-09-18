@@ -1,0 +1,6 @@
+cffi==2.0.0
+cryptography==46.0.1
+nostr==0.0.2
+pycparser==2.23
+secp256k1==0.14.0
+websocket-client==1.8.0
